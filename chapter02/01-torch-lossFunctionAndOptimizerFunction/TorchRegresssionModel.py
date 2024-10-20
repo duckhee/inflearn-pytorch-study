@@ -17,7 +17,7 @@ def make_dataset(x_train, x_val, y_train, y_val, batch_size=32):
     x_train_tensor = torch.tensor(x_train, dtype=torch.float32)
     y_train_tensor = torch.tensor(y_train, dtype=torch.float32).view(-1, 1)
     x_val_tensor = torch.tensor(x_val, dtype=torch.float32)
-    y_val_tensor = torch.tensor(y_val, dtype=torch.float32).view(-1, 1)
+    y_val_tensor = torch.tensor(y_val.values, dtype=torch.float32).view(-1, 1)
 
     # TensorDataSet 생성 -> 텐서 데이터셋으로 합치기
     train_dataset = TensorDataset(x_train_tensor, y_train_tensor)
@@ -96,21 +96,34 @@ path = 'https://raw.githubusercontent.com/DA4BAM/dataset/master/boston.csv'
 data = pd.read_csv(path)
 data.head()
 
+# 하위 계층 비율, 교사 1명당 학생 비율, 범죄율을 가지고 집갑을 예측하는 모델을 만든다.
 target = 'medv'
+# 모델을 만들 때 사용이 되는 정보를 정의한다.
 features = ['lstat', 'ptratio', 'crim']
+# 모델에 대한 입력 값들을 담는다.
 x = data.loc[:, features]
+# 모델에 대한 정답을 가져온다.
 y = data.loc[:, target]
 
-x_train, x_val, y_train, y_val = train_test_split(x, y, test_size=.2, random_state = 20)
+# 비율보다 데이터의 사이즈가 모델에 대한 정확도가 더 높아진다.
+# 학습과 검증을 위한 비율을 8 : 2로 설정하기 위해서 test_size를 0.2로 정의 한다.
+# 결과를 같게 나오기 위해서 사용이 되는 값이 random_state이다. -> 랜덤 시드 값이라고 이야기를 한다.
+x_train, x_val, y_train, y_val = train_test_split(x, y, test_size=.2, random_state=20)
 
 # 스케일러 선언
 scaler = MinMaxScaler()
+# 스케일링을 하고 학습용 데이터를 기준으로 피팅을 한 다음에 적용을 해서 결과를 담아 준다.
 x_train = scaler.fit_transform(x_train)
+# 적용만 해서 결과를 담아 달라는 것을 의미한다.
 x_val = scaler.transform(x_val)
 
+# 학습을 하기 위해서는 데이터 로더의 형태로 데이터를 만들어줘야 한다.
+# -> 데이터 로더에 들어가는 데이터는 tensor의 형태를 가지는 데이터야 한다.
 train_loader, x_val_ts, y_val_ts = make_dataset(x_train, x_val, y_train, y_val, 32)
 
 # 첫번째 배치만 로딩해서 살펴보기
+# 배치의 사이즈가 32이므로 32개의 로우가 있다.
+# 들어간 데이터의 정보가 3개이므로 3개의 컬럼이 있다.
 for x, y in train_loader:
     print(f"Shape of x [rows, columns]: {x.shape}")
     print(f"Shape of y: {y.shape} {y.dtype}")
@@ -120,7 +133,57 @@ n_feature = x.shape[1]
 
 # 모델 구조 설계
 model1 = nn.Sequential(
+    nn.Linear(n_feature, 1),  # 입력이 되는 정보의 값과 출력 값에 대한 설정 -> 모델은 선형 모델이다.
 
-        ).to(device)
+).to(device)
 
 print(model1)
+
+# 오류를 정의하기 위한 함수 정의
+loss_fn = nn.MSELoss()
+
+# 최적화를 이용할 함수 정의 -> 학습률을 적용 시키기 위한 값은 lr이다.
+optimizer = Adam(model1.parameters(), lr=0.1)
+
+# 데이터에 대한 학습
+# epochs 는 학습을 시킬 횟수에 대해서 정의한다.
+# -> 학습된 데이터 반복 횟수를 정의한 것이다.
+epochs = 50
+# 오차율에 대한 값을 저장할 list
+tr_loss_list, val_loss_list = [], []
+
+#
+for t in range(epochs):
+    # 데이터에 대한 학습
+    tr_loss = train(dataloader=train_loader, model=model1, loss_fn=loss_fn, optimizer=optimizer, device=device)
+    # 데이터에 대한 검증 진행
+    val_loss, _ = evaluate(x_val_tensor=x_val_ts, y_val_tensor=y_val_ts, model=model1, loss_fn=loss_fn, device=device)
+
+    # 오차율에 대한 리스트에 데이터 삽입
+    tr_loss_list.append(tr_loss)
+    val_loss_list.append(val_loss)
+    # 학습에 대한 출력
+    print(f"Epoch : {t + 1}, train loss : {tr_loss}, val loss : {val_loss}")
+
+# 학습된 파라미터 확인
+for name, param in model1.named_parameters():
+    if param.requires_grad:
+        # 여기서 weight는 각각의 정보에 곱해지는 가중치이고 bias는 더해주는 절편 값이다.
+        print(f"Parameter : {name}, value : {param.data}")
+
+# 학습에 대한 그래프 출력
+dl_learning_curve(tr_loss_list, val_loss_list)
+
+# 모델 평가
+loss, pred = evaluate(x_val_tensor=x_val_ts, y_val_tensor=y_val_ts, model=model1, loss_fn=loss_fn, device=device)
+# 오차 제곱의 평균 값이 MSE 이다.
+print(f"MSE: {loss}")
+
+#
+mae = mean_absolute_error(y_true=y_val_ts.numpy(), y_pred=pred.numpy())
+mape = mean_absolute_percentage_error(y_true=y_val_ts.numpy(), y_pred=pred.numpy())
+
+# MAE는 평균 오차를 의미한다. -> 단위 값을 곱하면 어느 정도의 오차 범위가 있다는 것을 보여줄 수 있다.
+print(f"MAE : {mae}")
+# MAPE 는 평균 오차율을 의미한다. -> 오차율이 몇 정도 된다고 이야기를 할 때 사용이 된다.
+print(f"MAPE: {mape}")
