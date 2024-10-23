@@ -179,9 +179,9 @@ loss, pred = evaluate(x_val_tensor=x_val_ts, y_val_tensor=y_val_ts, model=model1
 # 오차 제곱의 평균 값이 MSE 이다.
 print(f"MSE: {loss}")
 
-#
-mae = mean_absolute_error(y_true=y_val_ts.numpy(), y_pred=pred.numpy())
-mape = mean_absolute_percentage_error(y_true=y_val_ts.numpy(), y_pred=pred.numpy())
+# pred tensor 값을 numpy로 변경을 할 때 GPU를 이용하면 에러가 발생하므로 cpu로 변경해서 numpy로 변경하도록 해줘야 한다.
+mae = mean_absolute_error(y_true=y_val_ts.numpy(), y_pred=pred.cpu().numpy())
+mape = mean_absolute_percentage_error(y_true=y_val_ts.numpy(), y_pred=pred.cpu().numpy())
 
 # MAE는 평균 오차를 의미한다. -> 단위 값을 곱하면 어느 정도의 오차 범위가 있다는 것을 보여줄 수 있다.
 print(f"MAE : {mae}")
