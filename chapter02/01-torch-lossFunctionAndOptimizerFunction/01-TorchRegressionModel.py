@@ -15,7 +15,7 @@ from torch.optim import Adam  # 최적화 함수
 def make_dataset(x_train, x_val, y_train, y_val, batch_size=32):
     # 데이터를 텐서로 변경
     x_train_tensor = torch.tensor(x_train, dtype=torch.float32)
-    y_train_tensor = torch.tensor(y_train, dtype=torch.float32).view(-1, 1)
+    y_train_tensor = torch.tensor(y_train.values, dtype=torch.float32).view(-1, 1)
     x_val_tensor = torch.tensor(x_val, dtype=torch.float32)
     y_val_tensor = torch.tensor(y_val.values, dtype=torch.float32).view(-1, 1)
 
@@ -36,7 +36,7 @@ def train(dataloader: DataLoader, model, loss_fn, optimizer, device):
     num_batches = len(dataloader)
     # 오차 저장 변수
     tr_loss = 0
-    # 모델 학습
+    # 모델 학습 모드 설정
     model.train()
     # 배치 순서만큼 반복
     # batch : 현재 배치 번호, (X, y) : 입력 데이터와 레이블
@@ -139,7 +139,7 @@ model1 = nn.Sequential(
 
 print(model1)
 
-# 오류를 정의하기 위한 함수 정의
+# 오류를 정의하기 위한 함수 정의 -> 회귀 모델에 대한 오차 함수는 MSELoss()이다. (회귀 모델에 대한 오차 함수는 E의 값이 들어간다.)
 loss_fn = nn.MSELoss()
 
 # 최적화를 이용할 함수 정의 -> 학습률을 적용 시키기 위한 값은 lr이다.
@@ -152,7 +152,7 @@ epochs = 50
 # 오차율에 대한 값을 저장할 list
 tr_loss_list, val_loss_list = [], []
 
-#
+# 학습을 진행
 for t in range(epochs):
     # 데이터에 대한 학습
     tr_loss = train(dataloader=train_loader, model=model1, loss_fn=loss_fn, optimizer=optimizer, device=device)
@@ -163,7 +163,7 @@ for t in range(epochs):
     tr_loss_list.append(tr_loss)
     val_loss_list.append(val_loss)
     # 학습에 대한 출력
-    print(f"Epoch : {t + 1}, train loss : {tr_loss}, val loss : {val_loss}")
+    print(f"Epoch : {t + 1}, train loss : {tr_loss:4f}, val loss : {val_loss:4f}")
 
 # 학습된 파라미터 확인
 for name, param in model1.named_parameters():
