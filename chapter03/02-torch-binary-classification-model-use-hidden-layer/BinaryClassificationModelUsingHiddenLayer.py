@@ -107,7 +107,9 @@ def learning_curve(tr_loss_list, val_loss_list) -> None:
 
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-print(f"using {device} device")
+device = 'mps' if torch.backends.mps.is_available() else device
+
+print(f"msp {torch.backends.mps.is_available()} using {device} device")
 
 # get data -> 타이타닉에 대한 생존 데이터를 가지고 모델링 생성
 path = "https://raw.githubusercontent.com/DA4BAM/dataset/master/titanic.3.csv"
@@ -176,7 +178,7 @@ learning_curve(tr_loss_list, val_loss_list)
 
 # 모델에 대한 평가
 _, pred = evaluate_model(x_val_ts, y_val_ts, model, loss_fn, device)
-
+# pred = pred.cpu()
 print(f"predication : {pred.numpy()[:5]}")
 # 이진 분류 형태이기 때문에 예측 값에 대한 변환
 pred = np.where(pred > 0.5, 1, 0)
