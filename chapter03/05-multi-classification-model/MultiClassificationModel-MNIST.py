@@ -16,7 +16,7 @@ from torchvision.transforms import ToTensor
 np.set_printoptions(linewidth=np.inf)
 
 # torch setting
-torch.set_printoptions(linewidth=1000)
+torch.set_printoptions(linewidth=np.inf)
 
 
 def make_dataset(x_train, x_val, y_train, y_val, batch_size=32):
