@@ -128,6 +128,7 @@ def dl_learning_curve(tr_loss_list, val_loss_list):
 
 def predicated_custom(model, device):
     image_name = str(input("resource name input.. >> "))
+    print(f"image name : {image_name}")
     user_image_path = get_image_path(image_name)
     custom_image = cv2.imread(user_image_path, cv2.IMREAD_GRAYSCALE)
 
@@ -282,9 +283,9 @@ plt.tight_layout()
 plt.show()
 
 # 사용자가 작성한 이미지 예측 -> 크기는 100x100
-image_path = get_image_path("filename")
+image_path = get_image_path("handWriteSeven.png")
 
-if image_path is "" or image_path is None:
+if image_path == "" or image_path is None:
     print("no image")
     exit()
 
