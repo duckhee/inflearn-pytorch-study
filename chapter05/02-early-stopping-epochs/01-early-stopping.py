@@ -264,7 +264,7 @@ print("-" * 100)
 print(classification_report(y_test.numpy(), pred, target_names=classes))
 
 # 저장된 모델 사용을 하기
-load_model = torch.load(f="./fashion_mnist_model.pt")
+load_model = torch.load(f="./fashion_mnist_model.pt", weights_only=False)
 
 # 불러온 모델로 예측
 _, pred = evaluate(x_test, y_test, load_model, loss_fn, device)
@@ -278,7 +278,7 @@ display_load_cm.plot()
 plt.xticks(rotation=90)
 plt.show()
 
-print("="*80)
+print("=" * 80)
 print(f"Accuracy : {accuracy_score(y_test.numpy(), pred)}")
-print("="*80)
+print("=" * 80)
 print(f"Classification Report : {classification_report(y_test.numpy(), pred)}")
